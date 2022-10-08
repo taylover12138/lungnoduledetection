@@ -49,12 +49,12 @@ def load_itk_image(filename):
 
 def get_segmented_lungs(im, plot=False):
     '''
-    This funtion segments the lungs from the given 2D slice.
+    这个功能将肺从给定的2D切片中分割出来。
     '''
     # if plot == True:
     #     f, plots = plt.subplots(4, 2, figsize=(5, 40))
     '''
-    Step 1: Convert into a binary image.
+    Step 1: 转化成二进制图像.
     '''
     binary = im <-400
     # if plot == True:
@@ -62,7 +62,7 @@ def get_segmented_lungs(im, plot=False):
     #     plots[0][0].set_title('binary image')
     #     plots[0][0].imshow(binary, cmap=plt.cm.bone)
     '''
-    Step 2: Remove the blobs connected to the border of the image.
+    Step 2: 删除连接到图像边界的斑点.
     '''
     cleared = clear_border(binary)
     # if plot == True:
@@ -93,8 +93,7 @@ def get_segmented_lungs(im, plot=False):
     #     plots[1][1].set_title(' Keep the labels with 2 largest areas')
     #     plots[1][1].imshow(binary, cmap=plt.cm.bone)
     '''
-    Step 5: Erosion operation with a disk of radius 2. This operation is
-    seperate the lung nodules attached to the blood vessels.
+    Step 5: 以半径为2进行腐蚀以分离血管附近的肺结节. 
     '''
     selem = disk(2)
     binary = binary_erosion(binary, selem)
@@ -113,7 +112,7 @@ def get_segmented_lungs(im, plot=False):
     #     plots[2][1].set_title('keep nodules attached to the lung wall')
     #     plots[2][1].imshow(binary, cmap=plt.cm.bone)
     '''
-    Step 7: Fill in the small holes inside the binary mask of lungs.
+    Step 7: 填满二值图里的小孔
     '''
     edges = roberts(binary)
     binary = ndi.binary_fill_holes(edges)
@@ -122,7 +121,7 @@ def get_segmented_lungs(im, plot=False):
     #     plots[3][0].set_title('Fill in the small holes inside the binary mask of lungs')
     #     plots[3][0].imshow(binary, cmap=plt.cm.bone)
     '''
-    Step 8: Superimpose the binary mask on the input image.
+    Step 8: 添加mask
     '''
     sum = 0
 
