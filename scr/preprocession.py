@@ -3,30 +3,21 @@
 '''
 this script is used for basic process of lung 2017 in Data Science Bowl
 '''
-import glob
-import os
-import pandas as pd
+
 import SimpleITK as sitk
-import numpy as np  # linear algebra
-import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
-import skimage, os
+
 from skimage.morphology import ball, disk, dilation, binary_erosion, remove_small_objects, erosion, closing, \
     reconstruction, binary_closing
-from skimage.measure import label, regionprops, perimeter
-from skimage.morphology import binary_dilation, binary_opening
-from skimage.filters import roberts, sobel
-from skimage import measure, feature
+from skimage.measure import label, regionprops
+
+from skimage.filters import roberts
+
 from skimage.segmentation import clear_border
-from skimage import data
+
 from scipy import ndimage as ndi
-import matplotlib
-# matplotlib.use('Agg')
+
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import Poly3DCollection
-import pydicom
-import scipy.misc
-import numpy as np
-from os import listdir
+
 import numpy as np
 from scipy import ndimage
 
@@ -51,32 +42,32 @@ def get_segmented_lungs(im, plot=False):
     '''
     这个功能将肺从给定的2D切片中分割出来。
     '''
-    # if plot == True:
-    #     f, plots = plt.subplots(4, 2, figsize=(5, 40))
+    if plot == True:
+        f, plots = plt.subplots(4, 2, figsize=(5, 40))
     '''
     Step 1: 转化成二进制图像.
     '''
-    binary = im <-400
-    # if plot == True:
-    #     plots[0][0].axis('off')
-    #     plots[0][0].set_title('binary image')
-    #     plots[0][0].imshow(binary, cmap=plt.cm.bone)
+    binary = im <-600
+    if plot == True:
+        plots[0][0].axis('off')
+        plots[0][0].set_title('binary image')
+        plots[0][0].imshow(binary, cmap=plt.cm.bone)
     '''
     Step 2: 删除连接到图像边界的斑点.
     '''
     cleared = clear_border(binary)
-    # if plot == True:
-    #     plots[0][1].axis('off')
-    #     plots[0][1].set_title('after clear border')
-    #     plots[0][1].imshow(cleared, cmap=plt.cm.bone)
+    if plot == True:
+        plots[0][1].axis('off')
+        plots[0][1].set_title('after clear border')
+        plots[0][1].imshow(cleared, cmap=plt.cm.bone)
     '''
     Step 3: Label the image.
     '''
     label_image = label(cleared)
-    # if plot == True:
-    #     plots[1][0].axis('off')
-    #     plots[1][0].set_title('found all connective graph')
-    #     plots[1][0].imshow(label_image, cmap=plt.cm.bone)
+    if plot == True:
+        plots[1][0].axis('off')
+        plots[1][0].set_title('found all connective graph')
+        plots[1][0].imshow(label_image, cmap=plt.cm.bone)
     '''
     Step 4: Keep the labels with 2 largest areas.
     '''
@@ -88,40 +79,40 @@ def get_segmented_lungs(im, plot=False):
                 for coordinates in region.coords:
                     label_image[coordinates[0], coordinates[1]] = 0
     binary = label_image > 0
-    # if plot == True:
-    #     plots[1][1].axis('off')
-    #     plots[1][1].set_title(' Keep the labels with 2 largest areas')
-    #     plots[1][1].imshow(binary, cmap=plt.cm.bone)
+    if plot == True:
+        plots[1][1].axis('off')
+        plots[1][1].set_title(' Keep the labels with 2 largest areas')
+        plots[1][1].imshow(binary, cmap=plt.cm.bone)
     '''
     Step 5: 以半径为2进行腐蚀以分离血管附近的肺结节. 
     '''
     selem = disk(2)
     binary = binary_erosion(binary, selem)
-    # if plot == True:
-    #     plots[2][0].axis('off')
-    #     plots[2][0].set_title('seperate the lung nodules attached to the blood vessels')
-    #     plots[2][0].imshow(binary, cmap=plt.cm.bone)
+    if plot == True:
+        plots[2][0].axis('off')
+        plots[2][0].set_title('seperate the lung nodules attached to the blood vessels')
+        plots[2][0].imshow(binary, cmap=plt.cm.bone)
     '''
     Step 6: Closure operation with a disk of radius 10. This operation is
     to keep nodules attached to the lung wall.
     '''
     selem = disk(10)
     binary = binary_closing(binary, selem)
-    # if plot == True:
-    #     plots[2][1].axis('off')
-    #     plots[2][1].set_title('keep nodules attached to the lung wall')
-    #     plots[2][1].imshow(binary, cmap=plt.cm.bone)
+    if plot == True:
+        plots[2][1].axis('off')
+        plots[2][1].set_title('keep nodules attached to the lung wall')
+        plots[2][1].imshow(binary, cmap=plt.cm.bone)
     '''
     Step 7: 填满二值图里的小孔
     '''
     edges = roberts(binary)
     binary = ndi.binary_fill_holes(edges)
-    # if plot == True:
-    #     plots[3][0].axis('off')
-    #     plots[3][0].set_title('Fill in the small holes inside the binary mask of lungs')
-    #     plots[3][0].imshow(binary, cmap=plt.cm.bone)
+    if plot == True:
+        plots[3][0].axis('off')
+        plots[3][0].set_title('Fill in the small holes inside the binary mask of lungs')
+        plots[3][0].imshow(binary, cmap=plt.cm.bone)
     '''
-    Step 8: 添加mask
+    Step 8: 添加mask及分离肺部边缘
     '''
     sum = 0
 
@@ -133,10 +124,10 @@ def get_segmented_lungs(im, plot=False):
     get_high_vals = binary == 0
     im[get_high_vals] = 170
     im = np.rint(im)
-    # if plot == True:
-    #     plots[3][1].axis('off')
-    #     plots[3][1].set_title('Superimpose the binary mask on the input image')
-    #     plots[3][1].imshow(im, cmap=plt.cm.bone)
+    if plot == True:
+        plots[3][1].axis('off')
+        plots[3][1].set_title('Superimpose the binary mask on the input image')
+        plots[3][1].imshow(im, cmap=plt.cm.bone)
     return im, proportion
 
 
@@ -188,7 +179,7 @@ for idx in range(len(new_volume)):
     # print(data[314][303])
     # plt.figure(100)
     # plt.imshow(data, cmap='gray')
-    im, proportion = get_segmented_lungs(data, plot=True)
+    im, proportion = get_segmented_lungs(data, plot=False)
     LP.append(proportion)
     resample_im.append(im)
     # print(im[7][7])
