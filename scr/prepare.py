@@ -82,7 +82,7 @@ def process_mask(mask):
 
 
 def lumTrans(img):
-    lungwin = np.array([-1200.,600.])
+    lungwin = np.array([-1000.,600.])
     newimg = (img-lungwin[0])/(lungwin[1]-lungwin[0])
     newimg[newimg<0]=0
     newimg[newimg>1]=1

@@ -2,7 +2,7 @@
 import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
-newFilePath1='test.npy'
+newFilePath1='D:\lungnoduledetection\result\preprocess_result_pathsubset0\1.3.6.1.4.1.14519.5.2.1.6279.6001.105756658031515062000744821260_mask.npy'
 aa=np.array([1,2,3,5])
 print(aa[0:2])
 newVolume1 = np.load(newFilePath1)

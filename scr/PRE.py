@@ -4,8 +4,7 @@
 此脚本用于数据科学碗中的lung 2017基本流程
 '''
 import SimpleITK as sitk
-from skimage.morphology import ball, disk, dilation, binary_erosion, remove_small_objects, erosion, closing, \
-    reconstruction, binary_closing
+from skimage.morphology import disk,binary_erosion,binary_closing
 from skimage.measure import label, regionprops
 from skimage.filters import roberts
 from skimage.segmentation import clear_border
@@ -15,9 +14,9 @@ import numpy as np
 
 # numpyImage[numpyImage > -600] = 1
 # numpyImage[numpyImage <= -600] = 0
-#归一化
+#归一化到[255]
 def lumTrans(img):
-    lungwin = np.array([-1200.,600.])
+    lungwin = np.array([-1000.,600.])
     newimg = (img-lungwin[0])/(lungwin[1]-lungwin[0])
     newimg[newimg<0]=0
     newimg[newimg>1]=1
@@ -85,7 +84,7 @@ def get_segmented_lungs(im, plot=False):
     '''
     edges = roberts(binary)
     binary = ndi.binary_fill_holes(edges)
-    # binary=lumTrans(binary)
+
     if plot == True:
         plots[6].axis('off')
         plots[6].imshow(binary, cmap=plt.cm.bone)
@@ -122,6 +121,8 @@ if __name__ == '__main__':
 
     LP.append(proportion)
     resample_im.append(im)
+    print(im.shape)
+    np.save('test.npy', im)
     plt.figure(200)
     plt.imshow(im, cmap='gray')
     plt.show()
