@@ -11,6 +11,14 @@ from skimage.segmentation import clear_border
 from scipy import ndimage as ndi
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import pandas as pd
+from glob import glob
+try:
+    from tqdm import tqdm  # long waits are not fun
+except:
+    print('TQDM does make much nicer wait bars...')
+    tqdm = lambda x: x
 
 # numpyImage[numpyImage > -600] = 1
 # numpyImage[numpyImage <= -600] = 0
@@ -105,25 +113,84 @@ def get_segmented_lungs(im, plot=False):
 
     plt.show()
 
-    return im,proportion
+    return im
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    filename = r'D:\lungnoduledetection\dataset\subset2\1.3.6.1.4.1.14519.5.2.1.6279.6001.121993590721161347818774929286.mhd'
-    itkimage = sitk.ReadImage(filename)  # 读取.mhd文件
-    numpyImage = sitk.GetArrayFromImage(itkimage)  # 获取数据，自动从同名的.raw文件读取
-    data = numpyImage[50]
-    LP = []  # lung proportion
-    resample_im = []
-    plt.figure(50)
-    plt.imshow(data, cmap='gray')
-    im,proportion= get_segmented_lungs(data, plot=False)
+    # filename = r'D:\lungnoduledetection\dataset\subset1\1.3.6.1.4.1.14519.5.2.1.6279.6001.100684836163890911914061745866.mhd'
+    luna_path = r"D:\lungnoduledetection\dataset/"
+    outluna_path = r"D:\lungnoduledetection\result2/"
+    luna_subset_path = luna_path + "subset1/"
+    output_path = outluna_path + "output_subset1/"
+    file_list = glob(luna_subset_path + "*.mhd")
+    file_list_path=[]
+    for i in range(len(file_list)):
+        file_list_path.append(file_list[i][0:-4])
 
-    LP.append(proportion)
-    resample_im.append(im)
-    print(im.shape)
-    np.save('test.npy', im)
-    plt.figure(200)
-    plt.imshow(im, cmap='gray')
-    plt.show()
 
+    # Helper function to get rows in data frame associated
+    # with each file
+    def get_filename(file_list, case):
+        for f in file_list:
+            if case in f:
+                return (f)
+    # The locations of the nodes
+    df_node = pd.read_csv("D:\\lungnoduledetection\\dataset\\CSVFILES\\annotations.csv")
+    df_node["file"] = df_node["seriesuid"].map(lambda file_name: get_filename(file_list_path, file_name))
+    df_node = df_node.dropna()
+
+    # Looping over the image files
+    #
+    for fcount, img_file in enumerate(tqdm(file_list_path)):
+        mini_df = df_node[df_node["file"] == img_file]  # get all nodules associate with file
+        if mini_df.shape[0] > 0:  # some files may not have a nodule--skipping those
+
+            img_file = img_file + ".mhd"
+            itkimage = sitk.ReadImage(img_file)  # 读取.mhd文件
+            numpyImage = sitk.GetArrayFromImage(itkimage)# 获取数据，自动从同名的.raw文件读取
+
+
+
+            num_z, height, width = numpyImage.shape  # heightXwidth constitute the transverse plane
+            origin = np.array(itkimage.GetOrigin())  # x,y,z  Origin in world coordinates (mm)
+            spacing = np.array(itkimage.GetSpacing())  # spacing of voxels in world coor. (mm)
+            for node_idx, cur_row in mini_df.iterrows():
+                        node_x = cur_row["coordX"]
+                        node_y = cur_row["coordY"]
+                        node_z = cur_row["coordZ"]
+                        diam = cur_row["diameter_mm"]
+
+
+                        imgs = np.ndarray([height, width], dtype=np.float32)
+
+                        center = np.array([node_x, node_y, node_z])  # nodule center
+                        v_center = np.rint((center - origin) / spacing)  # nodule center in voxel space (still x,y,z ordering)
+
+                        for i, i_z in enumerate(np.arange(int(v_center[2]) - 1,
+                                                          int(v_center[2]) + 2).clip(0,
+                                                                                     num_z - 1)):  # clip prevents going out of bounds in Z
+                            # print('i=')
+                            # print(i)
+                            # print('i_z=')
+                            i_z = i_z + 1
+                            # print(i_z)
+
+
+                            imgs = numpyImage[i_z]
+
+                            # print(imgs.shape)
+                            # for i in range(imgs.shape[0]):
+                            #     data=imgs[i]
+                            #     # print(data.shape)
+                            #
+                            im= get_segmented_lungs(imgs, plot=False)
+                            print(im.shape)
+                            np.save(os.path.join(output_path, "images_%04d_%04d.npy" % (fcount,node_idx)), im)
+                            #     plt.figure(200)
+                            #     plt.imshow(im, cmap='gray')
+                            #     plt.show()
